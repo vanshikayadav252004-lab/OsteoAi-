@@ -1,125 +1,105 @@
 import streamlit as st
 import numpy as np
 
-# Page Config
+# -------- Page Config --------
 st.set_page_config(
-    page_title="Osteoporosis Hybrid Risk Assessment",
+    page_title="OsteoAI - Hybrid Risk Assessment",
     page_icon="🦴",
     layout="wide"
 )
 
-# Custom CSS (Futuristic Purple Theme)
+# -------- Custom CSS Styling --------
 st.markdown("""
 <style>
-.stApp {
-    background: linear-gradient(to bottom right, #2b1055, #4b0082, #6a0dad);
-    color: white;
+body {
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
 }
+
+.main {
+    background: linear-gradient(135deg, #1e1e2f, #302b63, #24243e);
+    color: white;
+    border-radius: 15px;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #ffffff;
+    font-weight: bold;
+}
+
 .card {
     background: rgba(255,255,255,0.08);
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0px 0px 20px rgba(255,255,255,0.2);
-    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.1);
 }
-.risk-low {
-    background-color: #1f8f4e;
-    padding: 15px;
+
+.stButton>button {
+    background: linear-gradient(90deg, #ff416c, #ff4b2b);
+    color: white;
     border-radius: 10px;
-    text-align: center;
+    height: 3em;
+    width: 100%;
+    font-size: 18px;
 }
-.risk-moderate {
-    background-color: #e6a100;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-}
-.risk-high {
-    background-color: #c0392b;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-}
+
 </style>
 """, unsafe_allow_html=True)
 
-# Title
-st.markdown("<h1 style='text-align:center;'>🧠 Osteoporosis Hybrid Risk Assessment System</h1>", unsafe_allow_html=True)
-st.divider()
+# -------- Title --------
+st.title("🦴 Osteoporosis Hybrid Risk Assessment System")
 
-# Upload Section
-st.markdown("## 🦴 Upload Bone X-Ray")
-uploaded_file = st.file_uploader("Upload X-ray Image", type=["jpg","png","jpeg"])
+st.markdown("---")
 
-st.divider()
-
-# Clinical Input Section
-st.markdown("## 📝 Enter Clinical Risk Factors")
-
+# -------- Layout --------
 col1, col2 = st.columns(2)
 
 with col1:
-    age = st.slider("Age", 30, 85, 50)
-    bmi = st.slider("BMI", 15, 40, 22)
+    st.markdown("### 📤 Upload Bone X-Ray")
+    uploaded_file = st.file_uploader("Upload X-Ray Image", type=["jpg", "png", "jpeg"])
+    
+    if uploaded_file:
+        st.image(uploaded_file, caption="Uploaded X-Ray", use_container_width=True)
+        image_score = np.random.uniform(0, 1)
+    else:
+        image_score = 0.3
 
 with col2:
-    menopause = st.radio("Post-Menopausal?", ["No","Yes"])
-    fracture = st.radio("Previous Fracture?", ["No","Yes"])
+    st.markdown("### 🩺 Enter Clinical Risk Factors")
+    age = st.slider("Age", 20, 100, 50)
+    bmi = st.number_input("BMI", 10.0, 40.0, 22.0)
+    menopause = st.selectbox("Post Menopause", ["No", "Yes"])
+    smoking = st.selectbox("Smoking", ["No", "Yes"])
+    fracture = st.selectbox("Previous Fracture", ["No", "Yes"])
 
-st.divider()
+# -------- Prediction --------
+st.markdown("---")
 
-# Analysis Button
-if st.button("⚡ Run Analysis & Scoring"):
+if st.button("🔬 Predict Hybrid Risk"):
 
-    st.markdown("## 🔬 Analysis & Scoring")
-
-    # Image Score (Simulated AI Detection)
-    if uploaded_file:
-        image_score = np.random.uniform(0.2, 0.9)
-    else:
-        image_score = 0.3  # default if no image
-
-    # Clinical Score Calculation
     clinical_score = 0
+    
     if age > 60:
-        clinical_score += 0.3
-    if bmi < 20:
-        clinical_score += 0.2
+        clinical_score += 1
+    if bmi < 18.5:
+        clinical_score += 1
     if menopause == "Yes":
-        clinical_score += 0.3
+        clinical_score += 1
+    if smoking == "Yes":
+        clinical_score += 1
     if fracture == "Yes":
-        clinical_score += 0.2
+        clinical_score += 1
 
-    clinical_score = min(clinical_score, 1.0)
+    clinical_score = clinical_score / 5
 
-    st.markdown("### 🧮 Image Score (Bone Weakness Detection)")
-    st.progress(image_score)
+    final_score = (0.6 * image_score) + (0.4 * clinical_score)
 
-    st.markdown("### 📊 Clinical Risk Score (Patient Data Evaluation)")
-    st.progress(clinical_score)
+    st.markdown("## 📊 Risk Analysis Result")
 
-    st.divider()
-
-    # Hybrid Formula
-    hybrid_score = (0.6 * image_score) + (0.4 * clinical_score)
-
-    st.markdown("## ⚙ Hybrid Risk Formula")
-    st.markdown(f"""
-    ### 0.6 × Image Score + 0.4 × Clinical Score  
-    ### Final Hybrid Risk Score = **{hybrid_score:.2f}**
-    """)
-
-    st.divider()
-
-    # Risk Classification
-    st.markdown("## 🚦 Risk Classification")
-
-    if hybrid_score <= 0.3:
-        st.markdown("<div class='risk-low'><h3>LOW RISK (0 – 0.3)</h3></div>", unsafe_allow_html=True)
-    elif 0.3 < hybrid_score <= 0.7:
-        st.markdown("<div class='risk-moderate'><h3>MODERATE RISK (0.3 – 0.7)</h3></div>", unsafe_allow_html=True)
+    if final_score < 0.3:
+        st.success(f"🟢 Low Risk ({round(final_score,2)})")
+    elif final_score < 0.7:
+        st.warning(f"🟠 Moderate Risk ({round(final_score,2)})")
     else:
-        st.markdown("<div class='risk-high'><h3>HIGH RISK (> 0.7)</h3></div>", unsafe_allow_html=True)
-
-st.divider()
-st.markdown("⚠ AI-assisted screening tool for educational purposes only.")
+        st.error(f"🔴 High Risk ({round(final_score,2)})")
